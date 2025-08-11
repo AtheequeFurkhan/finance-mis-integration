@@ -263,7 +263,7 @@ service /finance on new http:Listener(serverPort) {
                 };
             }
 
-            sql:ExecutionResult result = check dbClient->execute(`
+            sql:ExecutionResult _ = check dbClient->execute(`
                 UPDATE transactions 
                 SET name = ${transactionData.name}, amount = ${transactionData.amount}, 
                     category = ${transactionData.category}, description = ${transactionData.description}
