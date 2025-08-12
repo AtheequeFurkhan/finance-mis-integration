@@ -290,16 +290,18 @@ service /bridge on new http:Listener(serverPort) {
     resource function get docs() returns json {
         return {
             title: "Finance Bridge API",
-            version: "1.0.0",
+            version: "1.0.1",
             description: "REST API bridge for finance backend services",
             endpoints: {
                 "GET /bridge/health": "Health check",
                 "GET /bridge/transactions": "Get all transactions (supports filtering)",
+                "GET /bridge/transactions/export": "Flat data export for BI tools",
                 "GET /bridge/transactions/{id}": "Get specific transaction",
                 "POST /bridge/transactions": "Create new transaction",
                 "PUT /bridge/transactions/{id}": "Update transaction",
                 "DELETE /bridge/transactions/{id}": "Delete transaction",
                 "GET /bridge/summary": "Get financial summary",
+                "GET /bridge/schema": "Schema metadata for BI connectors",
                 "GET /bridge/fetchData": "Legacy endpoint for backward compatibility"
             },
             authentication: "API key required in x-api-key header",
@@ -308,7 +310,7 @@ service /bridge on new http:Listener(serverPort) {
                     category: "Filter by transaction category",
                     startDate: "Filter from date (YYYY-MM-DD)",
                     endDate: "Filter until date (YYYY-MM-DD)",
-                    limitParam: "Limit number of results",
+                    Limit: "Limit number of results",
                     offset: "Offset for pagination"
                 }
             }
