@@ -2,3 +2,6 @@
 org = "finance"
 name = "finance_mis_integration"
 version = "0.1.0"
+
+[build-options]
+observabilityIncluded = true
