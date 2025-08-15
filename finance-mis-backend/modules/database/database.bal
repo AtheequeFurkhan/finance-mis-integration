@@ -1,6 +1,5 @@
 import finance_mis_integration.models;
 
-import ballerina/io;
 import ballerina/log;
 import ballerina/os;
 import ballerina/sql;
@@ -27,18 +26,84 @@ final postgresql:Client dbClient = check new (
 public function initDatabase() returns error? {
     log:printInfo("Initializing finance database");
 
-    string sqlScript = check io:fileReadString("resources/create_tables.sql");
-    string[] statements = re `;\s*`.split(sqlScript);
+    // Create departments table
+    _ = check dbClient->execute(`
+        CREATE TABLE IF NOT EXISTS departments (
+            department_id SERIAL PRIMARY KEY,
+            name VARCHAR(100) NOT NULL,
+            cost_center VARCHAR(50),
+            manager VARCHAR(100)
+        )
+    `);
 
-    foreach string statement in statements {
-        string trimmedStatement = statement.trim();
-        if trimmedStatement.length() > 0 {
-            // Use direct SQL execution instead of parameterized query
-            _ = check dbClient->execute(`${trimmedStatement}`);
-        }
+    // Create expense_categories table
+    _ = check dbClient->execute(`
+        CREATE TABLE IF NOT EXISTS expense_categories (
+            category_id SERIAL PRIMARY KEY,
+            name VARCHAR(100) NOT NULL,
+            description TEXT
+        )
+    `);
+
+    // Create transactions table
+    _ = check dbClient->execute(`
+        CREATE TABLE IF NOT EXISTS transactions (
+            transaction_id SERIAL PRIMARY KEY,
+            transaction_type VARCHAR(20) NOT NULL CHECK (transaction_type IN ('REVENUE', 'EXPENSE')),
+            department_id INTEGER REFERENCES departments(department_id),
+            category_id INTEGER REFERENCES expense_categories(category_id),
+            amount DECIMAL(15,2) NOT NULL,
+            transaction_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            description TEXT
+        )
+    `);
+
+    log:printInfo("Database tables created successfully");
+
+    // Check if data exists, if not insert sample data
+    record {|int count;|}|error deptCountResult = dbClient->queryRow(`SELECT COUNT(*) as count FROM departments`);
+    int departmentCount = 0;
+    if deptCountResult is record {|int count;|} {
+        departmentCount = deptCountResult.count;
+    }
+    if (departmentCount == 0) {
+        log:printInfo("Inserting sample data");
+
+        // Insert sample departments
+        _ = check dbClient->execute(`
+            INSERT INTO departments (name, cost_center, manager) VALUES
+            ('Sales', 'CC001', 'John Smith'),
+            ('Marketing', 'CC002', 'Jane Doe'),
+            ('Engineering', 'CC003', 'Bob Johnson'),
+            ('Finance', 'CC004', 'Alice Brown')
+        `);
+
+        // Insert sample categories
+        _ = check dbClient->execute(`
+            INSERT INTO expense_categories (name, description) VALUES
+            ('Salaries', 'Employee salaries and wages'),
+            ('Marketing', 'Advertising and promotional expenses'),
+            ('Operations', 'Day-to-day operational costs'),
+            ('Equipment', 'Purchase and maintenance of equipment'),
+            ('Travel', 'Business travel expenses')
+        `);
+
+        // Insert sample transactions
+        _ = check dbClient->execute(`
+            INSERT INTO transactions (transaction_type, department_id, category_id, amount, description) VALUES
+            ('REVENUE', 1, NULL, 50000.00, 'Q1 Sales'),
+            ('REVENUE', 1, NULL, 75000.00, 'Q2 Sales'),
+            ('EXPENSE', 2, 2, 15000.00, 'Digital advertising campaign'),
+            ('EXPENSE', 3, 4, 25000.00, 'Developer workstations'),
+            ('EXPENSE', 1, 1, 30000.00, 'Sales team salaries'),
+            ('EXPENSE', 4, 3, 10000.00, 'Office supplies')
+        `);
+
+        log:printInfo("Sample data inserted successfully");
     }
 
     log:printInfo("Database initialized successfully");
+    return;
 }
 
 # Function to get revenue data by department
@@ -497,4 +562,43 @@ public function getDashboardSummary() returns map<json>|error {
     };
 
     return summary;
+}
+
+# Function to get expense data by department
+# + return - Expense data by department or error
+public function getExpenseByDepartment() returns map<json>|error {
+    log:printInfo("Fetching expenses by department data");
+
+    sql:ParameterizedQuery query = `
+        SELECT 
+            d.department_id,
+            d.name as department_name,
+            d.cost_center,
+            SUM(t.amount) as total_expenses
+        FROM 
+            departments d
+        JOIN 
+            transactions t ON d.department_id = t.department_id
+        WHERE 
+            t.transaction_type = 'EXPENSE'
+        GROUP BY 
+            d.department_id, d.name, d.cost_center
+        ORDER BY 
+            total_expenses DESC
+    `;
+
+    stream<record {}, error?> resultStream = dbClient->query(query);
+
+    map<json> results = {};
+    results["departments"] = [];
+
+    check from record {} result in resultStream
+        do {
+            json[] departmentsArray = <json[]>results["departments"];
+            json jsonResult = result.toJson();
+            departmentsArray.push(jsonResult);
+            results["departments"] = departmentsArray;
+        };
+
+    return results;
 }
