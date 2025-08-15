@@ -1,8 +1,9 @@
+import finance_mis_integration.database;
+import finance_mis_integration.models;
+
 import ballerina/http;
 import ballerina/log;
 import ballerina/time;
-import finance_mis_integration.database;
-import finance_mis_integration.models;
 
 # Finance MIS HTTP service
 # Provides REST API endpoints for the Finance MIS system
@@ -14,7 +15,7 @@ import finance_mis_integration.models;
     }
 }
 service /financeMisService on new http:Listener(8080) {
-    
+
     # Get dashboard summary data endpoint
     # + return - Dashboard summary data or error
     resource function get dashboard/summary() returns json|error {
@@ -28,14 +29,14 @@ service /financeMisService on new http:Listener(8080) {
         log:printInfo("GET request received for revenue by department");
         return database:getRevenueDepartment();
     }
-    
+
     # Get expenses by category endpoint
     # + return - Expense data by category or error
     resource function get expense/category() returns json|error {
         log:printInfo("GET request received for expenses by category");
         return database:getExpenseCategory();
     }
-    
+
     # Get financial data by date endpoint
     # + return - Financial data by date or error
     resource function get financials/date() returns json|error {
@@ -56,12 +57,12 @@ service /financeMisService on new http:Listener(8080) {
     resource function get departments/[int id]() returns models:Department|error {
         log:printInfo(string `GET request received for department ID: ${id}`);
         models:Department|error result = database:getDepartmentById(id);
-        
+
         if result is error {
             log:printError(string `Department with ID ${id} not found`);
             return error(string `Department with ID ${id} not found`);
         }
-        
+
         return result;
     }
 
@@ -88,13 +89,13 @@ service /financeMisService on new http:Listener(8080) {
     resource function delete departments/[int id]() returns json|error {
         log:printInfo(string `DELETE request received for department ID: ${id}`);
         boolean|error result = database:deleteDepartment(id);
-        
+
         if result is error {
             log:printError(string `Failed to delete department ID: ${id}`, 'error = result);
             return error(string `Failed to delete department ID: ${id}`);
         }
-        
-        return { success: true, message: string `Department ID ${id} deleted successfully` };
+
+        return {success: true, message: string `Department ID ${id} deleted successfully`};
     }
 
     # Get all expense categories endpoint
@@ -110,12 +111,12 @@ service /financeMisService on new http:Listener(8080) {
     resource function get expense/categories/[int id]() returns models:ExpenseCategory|error {
         log:printInfo(string `GET request received for expense category ID: ${id}`);
         models:ExpenseCategory|error result = database:getExpenseCategoryById(id);
-        
+
         if result is error {
             log:printError(string `Expense category with ID ${id} not found`);
             return error(string `Expense category with ID ${id} not found`);
         }
-        
+
         return result;
     }
 
@@ -142,13 +143,13 @@ service /financeMisService on new http:Listener(8080) {
     resource function delete expense/categories/[int id]() returns json|error {
         log:printInfo(string `DELETE request received for expense category ID: ${id}`);
         boolean|error result = database:deleteExpenseCategory(id);
-        
+
         if result is error {
             log:printError(string `Failed to delete expense category ID: ${id}`, 'error = result);
             return error(string `Failed to delete expense category ID: ${id}`);
         }
-        
-        return { success: true, message: string `Expense category ID ${id} deleted successfully` };
+
+        return {success: true, message: string `Expense category ID ${id} deleted successfully`};
     }
 
     # Get all transactions endpoint
@@ -164,12 +165,12 @@ service /financeMisService on new http:Listener(8080) {
     resource function get transactions/[int id]() returns models:Transaction|error {
         log:printInfo(string `GET request received for transaction ID: ${id}`);
         models:Transaction|error result = database:getTransactionById(id);
-        
+
         if result is error {
             log:printError(string `Transaction with ID ${id} not found`);
             return error(string `Transaction with ID ${id} not found`);
         }
-        
+
         return result;
     }
 
@@ -196,23 +197,23 @@ service /financeMisService on new http:Listener(8080) {
     resource function delete transactions/[int id]() returns json|error {
         log:printInfo(string `DELETE request received for transaction ID: ${id}`);
         boolean|error result = database:deleteTransaction(id);
-        
+
         if result is error {
             log:printError(string `Failed to delete transaction ID: ${id}`, 'error = result);
             return error(string `Failed to delete transaction ID: ${id}`);
         }
-        
-        return { success: true, message: string `Transaction ID ${id} deleted successfully` };
+
+        return {success: true, message: string `Transaction ID ${id} deleted successfully`};
     }
 
     # Health check endpoint
     # + return - Service health status
     resource function get health() returns json {
         log:printInfo("Health check request received");
-        
+
         // Get current UTC time
         string timestamp = time:utcToString(time:utcNow());
-        
+
         return {
             "status": "UP",
             "timestamp": timestamp,

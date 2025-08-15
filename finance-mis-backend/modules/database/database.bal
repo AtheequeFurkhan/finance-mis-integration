@@ -39,6 +39,7 @@ public function initDatabase() returns error? {
 }
 
 # Function to get revenue data by department
+# + return - Revenue data by department or error
 public function getRevenueDepartment() returns map<json>|error {
     log:printInfo("Fetching revenue by department data");
     
@@ -65,10 +66,12 @@ public function getRevenueDepartment() returns map<json>|error {
     map<json> results = {};
     results["departments"] = [];
     
+    // Fix the check operator usage
     check from record {} result in resultStream
         do {
             json[] departmentsArray = <json[]>results["departments"];
-            departmentsArray.push(check result.toJson());
+            json jsonResult = result.toJson();
+            departmentsArray.push(jsonResult);
             results["departments"] = departmentsArray;
         };
     
