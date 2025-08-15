@@ -16,6 +16,29 @@ Icon?
 *.tar.gz
 
 ############################
+# Ballerina Specific
+############################
+target/
+# Ignore generated binaries
+*.balx
+*.jar
+*.class
+*.zip
+*.tar
+.ballerina/
+# Ignore build files
+build/
+
+############################
+# Project Specific
+############################
+# Configuration files with sensitive data
+resources/config.json
+# But allow sample files
+!resources/*.sample.json
+!resources/create_tables.sql
+
+############################
 # Node / JavaScript
 ############################
 node_modules/
